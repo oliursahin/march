@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ObjectType } from "@/generated/prisma/enums";
 import { writeObjectFile } from "@/lib/vault";
+import { randomUUID } from "crypto";
 
 const VALID_TYPES = new Set(Object.values(ObjectType));
 
@@ -10,6 +11,16 @@ export async function POST(req: NextRequest) {
   const auth = await getAuthenticatedUser();
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Get user's vault path
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    select: { vaultPath: true },
+  });
+
+  if (!user?.vaultPath) {
+    return NextResponse.json({ error: "Vault not configured" }, { status: 400 });
   }
 
   const body = await req.json();
@@ -29,28 +40,39 @@ export async function POST(req: NextRequest) {
       ? trimmed.slice(0, 100) + "..."
       : trimmed;
 
+  const now = new Date();
+  const id = randomUUID();
+  const objectData = {
+    id,
+    gmailId: `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    userId: auth.userId,
+    subject,
+    senderName: "You",
+    senderEmail: auth.email,
+    bodyText: trimmed,
+    receivedAt: now,
+    gmailUrl: isUrl ? trimmed : "",
+    dueDate: null,
+    type: objectType,
+    metadata: null,
+    status: "INBOX" as const,
+    statusChangedAt: now,
+    createdAt: now,
+    updatedAt: now,
+  };
+
   try {
-    const object = await prisma.emailObject.create({
-      data: {
-        gmailId: `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        userId: auth.userId,
-        subject,
-        senderName: "You",
-        senderEmail: auth.email,
-        bodyText: trimmed,
-        receivedAt: new Date(),
-        gmailUrl: isUrl ? trimmed : "",
-        type: objectType,
-        status: "INBOX",
-      },
-    });
+    // 1. Write to vault FIRST (source of truth)
+    await writeObjectFile(user.vaultPath, objectData);
 
-    // Write .md file to vault (best-effort)
-    writeObjectFile(object).catch((err) =>
-      console.error("Failed to write vault file:", err)
-    );
+    // 2. Index into SQLite (best-effort)
+    try {
+      await prisma.emailObject.create({ data: objectData });
+    } catch (indexErr) {
+      console.error("Index write failed (data safe in vault):", indexErr);
+    }
 
-    return NextResponse.json({ success: true, id: object.id });
+    return NextResponse.json({ success: true, id });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Failed to create object:", message, error);

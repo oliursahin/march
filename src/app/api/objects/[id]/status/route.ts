@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { EmailStatus } from "@/generated/prisma/enums";
-import { writeObjectFile } from "@/lib/vault";
+import { writeObjectFile, readObjectFile } from "@/lib/vault";
 
 const VALID_STATUSES = new Set(Object.values(EmailStatus));
 
@@ -13,6 +13,15 @@ export async function PATCH(
   const auth = await getAuthenticatedUser();
   if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: auth.userId },
+    select: { vaultPath: true },
+  });
+
+  if (!user?.vaultPath) {
+    return NextResponse.json({ error: "Vault not configured" }, { status: 400 });
   }
 
   const { id } = await params;
@@ -26,28 +35,42 @@ export async function PATCH(
     );
   }
 
-  const object = await prisma.emailObject.findUnique({
-    where: { id, userId: auth.userId },
-    select: { id: true },
-  });
-
-  if (!object) {
+  // Read current object from vault
+  const existing = await readObjectFile(user.vaultPath, id);
+  if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const updated = await prisma.emailObject.update({
-    where: { id },
-    data: {
-      status: newStatus as EmailStatus,
-      statusChangedAt: new Date(),
-      ...(newStatus === "INBOX" && { dueDate: null }),
-    },
-  });
+  const now = new Date().toISOString();
+  const updatedData = {
+    ...existing,
+    status: newStatus,
+    statusChangedAt: now,
+    updatedAt: now,
+    ...(newStatus === "INBOX" && { dueDate: null }),
+  };
 
-  // Sync updated object to vault file (best-effort)
-  writeObjectFile(updated).catch((err) =>
-    console.error("Failed to update vault file:", err)
-  );
+  try {
+    // 1. Write to vault FIRST (source of truth)
+    await writeObjectFile(user.vaultPath, updatedData);
 
-  return NextResponse.json({ object: updated });
+    // 2. Update SQLite index (best-effort)
+    try {
+      await prisma.emailObject.update({
+        where: { id },
+        data: {
+          status: newStatus as EmailStatus,
+          statusChangedAt: new Date(),
+          ...(newStatus === "INBOX" && { dueDate: null }),
+        },
+      });
+    } catch (indexErr) {
+      console.error("Index update failed (data safe in vault):", indexErr);
+    }
+
+    return NextResponse.json({ object: updatedData });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
