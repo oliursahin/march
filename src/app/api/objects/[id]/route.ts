@@ -35,7 +35,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { bodyText, subject } = body;
+  const { bodyText, subject, dueDate } = body;
 
   const object = await prisma.emailObject.findUnique({
     where: { id, userId: auth.userId },
@@ -51,6 +51,7 @@ export async function PATCH(
     data: {
       ...(bodyText !== undefined && { bodyText }),
       ...(subject !== undefined && { subject }),
+      ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
     },
   });
 

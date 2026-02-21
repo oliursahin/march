@@ -44,6 +44,7 @@ model EmailObject {
   receivedAt      DateTime
   gmailUrl        String
   dueDate         DateTime?
+  type            ObjectType  @default(NOTE)
   metadata        Json?
   status          EmailStatus @default(INBOX)
   statusChangedAt DateTime    @default(now())
@@ -52,11 +53,19 @@ model EmailObject {
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+  @@index([userId, type])
   @@index([receivedAt])
 }
 
 enum EmailStatus {
   INBOX
-  LATER
-  ARCHIVED
+  PLANNED
+}
+
+enum ObjectType {
+  NOTE
+  TODO
+  PAGE
+  BOOKMARK
+  URL
 }

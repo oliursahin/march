@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { ObjectEditor } from "@/components/object-editor";
 import { StatusActions } from "@/components/status-actions";
+import { DateInput } from "@/components/date-input";
 import { CommandBar } from "@/components/command-bar";
 import Link from "next/link";
 
@@ -35,7 +36,10 @@ export default async function ObjectPage({
             >
               &larr; Back
             </Link>
-            <StatusActions objectId={object.id} currentStatus={object.status} />
+            <div className="flex items-center gap-4">
+              <DateInput objectId={object.id} initialDate={object.dueDate} />
+              <StatusActions objectId={object.id} currentStatus={object.status} />
+            </div>
           </div>
           <ObjectEditor
             objectId={object.id}
