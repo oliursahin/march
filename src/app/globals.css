@@ -208,7 +208,7 @@ body {
 /* Placeholder — only show on first empty paragraph */
 .prose-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
-  color: #d1d5db;
+  color: #9ca3af;
   pointer-events: none;
   position: absolute;
 }

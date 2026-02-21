@@ -21,10 +21,6 @@ export async function POST(req: NextRequest) {
     select: { email: true },
   });
 
-  if (!tokens) {
-    return NextResponse.json({ error: "Gmail not connected" }, { status: 400 });
-  }
-
   const trimmed = content.trim();
   const isUrl = /^https?:\/\/\S+$/i.test(trimmed);
 
@@ -35,29 +31,46 @@ export async function POST(req: NextRequest) {
       : trimmed;
 
   try {
-    const gmail = await getGmailClient(auth.userId);
-    const gmailMessageId = await sendToGmail(
-      gmail,
-      tokens.email,
-      subject,
-      trimmed,
-      "march_inbox"
-    );
-
+    // Create locally first
+    const localId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const object = await prisma.emailObject.create({
       data: {
-        gmailId: gmailMessageId,
+        gmailId: localId,
         userId: auth.userId,
         subject,
         senderName: "You",
-        senderEmail: tokens.email,
+        senderEmail: tokens?.email ?? "",
         bodyText: trimmed,
         receivedAt: new Date(),
-        gmailUrl: isUrl ? trimmed : `https://mail.google.com/mail/u/0/#inbox/${gmailMessageId}`,
+        gmailUrl: isUrl ? trimmed : "",
         status: "INBOX",
         metadata: { label: "march_inbox" },
       },
     });
+
+    // Try Gmail send (best-effort)
+    if (tokens) {
+      try {
+        const gmail = await getGmailClient(auth.userId);
+        const gmailMessageId = await sendToGmail(
+          gmail,
+          tokens.email,
+          subject,
+          trimmed,
+          "march_inbox"
+        );
+
+        await prisma.emailObject.update({
+          where: { id: object.id },
+          data: {
+            gmailId: gmailMessageId,
+            gmailUrl: isUrl ? trimmed : `https://mail.google.com/mail/u/0/#inbox/${gmailMessageId}`,
+          },
+        });
+      } catch (gmailError) {
+        console.error("Gmail send failed (object saved locally):", gmailError);
+      }
+    }
 
     return NextResponse.json({ success: true, id: object.id });
   } catch (error) {
