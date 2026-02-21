@@ -6,11 +6,14 @@ import {
 } from "@/lib/google";
 import { createSessionToken } from "@/lib/session";
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/lib/constants";
+import { setPendingSession } from "@/lib/pending-auth";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const state = searchParams.get("state");
+  const isTauri = state === "tauri";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   if (error) {
@@ -75,7 +78,13 @@ export async function GET(request: NextRequest) {
     // Create session JWT
     const sessionToken = await createSessionToken(user.id, user.email);
 
-    // Set cookie and redirect to inbox
+    if (isTauri) {
+      // Tauri flow: store token for the webview to claim, show success page
+      setPendingSession(sessionToken);
+      return NextResponse.redirect(new URL("/auth/success", appUrl));
+    }
+
+    // Normal web flow: set cookie and redirect
     const response = NextResponse.redirect(new URL("/", appUrl));
     response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
       maxAge: SESSION_MAX_AGE,
