@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { writeObjectFile } from "@/lib/vault";
 
 export async function GET(
   _request: NextRequest,
@@ -54,6 +55,11 @@ export async function PATCH(
       ...(dueDate !== undefined && { dueDate: dueDate ? new Date(dueDate) : null }),
     },
   });
+
+  // Sync updated object to vault file (best-effort)
+  writeObjectFile(updated).catch((err) =>
+    console.error("Failed to update vault file:", err)
+  );
 
   return NextResponse.json({ object: updated });
 }

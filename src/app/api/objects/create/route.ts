@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { ObjectType } from "@/generated/prisma/enums";
+import { writeObjectFile } from "@/lib/vault";
 
 const VALID_TYPES = new Set(Object.values(ObjectType));
 
@@ -43,6 +44,11 @@ export async function POST(req: NextRequest) {
         status: "INBOX",
       },
     });
+
+    // Write .md file to vault (best-effort)
+    writeObjectFile(object).catch((err) =>
+      console.error("Failed to write vault file:", err)
+    );
 
     return NextResponse.json({ success: true, id: object.id });
   } catch (error) {

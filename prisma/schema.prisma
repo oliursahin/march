@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
@@ -45,7 +45,7 @@ model EmailObject {
   gmailUrl        String
   dueDate         DateTime?
   type            ObjectType  @default(NOTE)
-  metadata        Json?
+  metadata        String?
   status          EmailStatus @default(INBOX)
   statusChangedAt DateTime    @default(now())
   createdAt       DateTime    @default(now())
