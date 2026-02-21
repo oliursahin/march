@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
@@ -43,7 +43,9 @@ model EmailObject {
   bodyText        String
   receivedAt      DateTime
   gmailUrl        String
-  metadata        Json?
+  dueDate         DateTime?
+  type            ObjectType  @default(NOTE)
+  metadata        String?
   status          EmailStatus @default(INBOX)
   statusChangedAt DateTime    @default(now())
   createdAt       DateTime    @default(now())
@@ -51,11 +53,19 @@ model EmailObject {
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+  @@index([userId, type])
   @@index([receivedAt])
 }
 
 enum EmailStatus {
   INBOX
-  LATER
-  ARCHIVED
+  PLANNED
+}
+
+enum ObjectType {
+  NOTE
+  TODO
+  PAGE
+  BOOKMARK
+  URL
 }

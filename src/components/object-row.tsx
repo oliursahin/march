@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { timeAgo, truncate } from "@/lib/utils";
-import { StatusActions } from "./status-actions";
+import { formatNice } from "@/lib/parse-date";
 import type { EmailObjectListItem } from "@/types";
+
+const TYPE_LABELS: Record<string, string> = {
+  NOTE: "note",
+  TODO: "todo",
+  PAGE: "page",
+  BOOKMARK: "bookmark",
+  URL: "url",
+};
 
 export function ObjectRow({ object }: { object: EmailObjectListItem }) {
   return (
@@ -13,22 +21,26 @@ export function ObjectRow({ object }: { object: EmailObjectListItem }) {
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-xs text-gray-400">
+            {TYPE_LABELS[object.type] || object.type}
+          </span>
           <span className="text-sm font-medium text-gray-900 truncate">
-            {object.senderName}
+            {object.subject}
           </span>
           <span className="text-xs text-gray-400 flex-shrink-0">
             {timeAgo(object.receivedAt)}
           </span>
         </div>
-        <p className="text-sm text-gray-700 truncate">{object.subject}</p>
-        <p className="text-xs text-gray-400 truncate mt-0.5">
+        <p className="text-xs text-gray-500 truncate mt-0.5">
           {truncate(object.bodyText, 120)}
         </p>
       </div>
 
-      <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <StatusActions objectId={object.id} currentStatus={object.status} />
-      </div>
+      {object.dueDate && (
+        <span className="text-xs text-gray-400 flex-shrink-0 pt-1">
+          {formatNice(new Date(object.dueDate))}
+        </span>
+      )}
     </Link>
   );
 }

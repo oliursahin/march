@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
-import { syncEmails } from "@/lib/gmail";
+import { rebuildIndex } from "@/lib/vault";
 
 export async function POST() {
   const auth = await getAuthenticatedUser();
@@ -9,12 +9,11 @@ export async function POST() {
   }
 
   try {
-    const result = await syncEmails(auth.userId);
-    return NextResponse.json({ success: true, ...result });
-  } catch (err) {
-    console.error("Sync error:", err);
-    const message =
-      err instanceof Error ? err.message : "Failed to sync emails";
+    const result = await rebuildIndex(auth.userId);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Vault rebuild failed:", message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

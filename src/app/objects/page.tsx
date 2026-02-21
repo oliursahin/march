@@ -3,13 +3,14 @@ import { getAuthenticatedUser } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { ObjectList } from "@/components/object-list";
+import { CommandBar } from "@/components/command-bar";
 
-export default async function ArchivedPage() {
+export default async function ObjectsPage() {
   const auth = await getAuthenticatedUser();
   if (!auth) redirect("/signin");
 
   const objects = await prisma.emailObject.findMany({
-    where: { userId: auth.userId, status: "ARCHIVED" },
+    where: { userId: auth.userId },
     orderBy: { receivedAt: "desc" },
     select: {
       id: true,
@@ -18,7 +19,9 @@ export default async function ArchivedPage() {
       senderEmail: true,
       receivedAt: true,
       status: true,
+      type: true,
       bodyText: true,
+      dueDate: true,
     },
   });
 
@@ -27,10 +30,11 @@ export default async function ArchivedPage() {
       <Nav />
       <main className="flex-1 flex items-start justify-center p-6">
         <div className="max-w-2xl w-full mx-auto px-4 py-10">
-          <h1 className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">Archived</h1>
-          <ObjectList objects={objects} status="ARCHIVED" />
+          <h1 className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">Objects</h1>
+          <ObjectList objects={objects} status="ALL" />
         </div>
       </main>
+      <CommandBar />
     </div>
   );
 }

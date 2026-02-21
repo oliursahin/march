@@ -1,24 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { SyncButton } from "./sync-button";
+import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { label: "today", href: "/" },
   { label: "inbox", href: "/inbox" },
-  { label: "later", href: "/later" },
-  { label: "archived", href: "/archived" },
+  { label: "pages", href: "/pages" },
+  { label: "objects", href: "/objects" },
 ];
 
 export function Nav() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/signin");
-  };
 
   return (
     <div
@@ -51,14 +44,18 @@ export function Nav() {
 
         <div className="h-2" />
 
-        <SyncButton />
-
-        <button
-          onClick={handleLogout}
-          className="text-sm text-gray-400 hover:text-gray-900 transition-all duration-200 ease-out"
+        <Link
+          href="/settings"
+          className={`
+            text-sm transition-all duration-200 ease-out
+            ${pathname.startsWith("/settings")
+              ? "text-gray-900 underline underline-offset-2"
+              : "text-gray-400 hover:text-gray-900"
+            }
+          `}
         >
-          logout
-        </button>
+          settings
+        </Link>
       </nav>
     </div>
   );
