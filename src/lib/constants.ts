@@ -10,6 +10,6 @@ export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/gmail.send",
 ].join(" ");
 
-export const PUBLIC_PATHS = ["/signin"];
+export const PUBLIC_PATHS = ["/signin", "/auth/success"];
 
 export const IGNORED_PREFIXES = ["/api/auth", "/_next", "/favicon.ico"];
