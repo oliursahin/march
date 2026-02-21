@@ -12,6 +12,8 @@ model User {
   email       String        @unique
   name        String?
   avatarUrl   String?
+  vaultName   String?
+  vaultPath   String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   objects     EmailObject[]

@@ -1,9 +1,6 @@
-import { readdir, readFile, writeFile, unlink, mkdir } from "fs/promises";
+import { readdir, readFile, writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
-
-// Vault directory — defaults to ./vault relative to project root
-const VAULT_DIR = process.env.VAULT_DIR || join(process.cwd(), "vault");
 
 // --- Frontmatter types ---
 
@@ -28,18 +25,6 @@ export interface VaultObject extends ObjectFrontmatter {
   bodyText: string;
 }
 
-// --- Vault directory management ---
-
-export function getVaultDir(): string {
-  return VAULT_DIR;
-}
-
-export async function ensureVaultDir(): Promise<void> {
-  if (!existsSync(VAULT_DIR)) {
-    await mkdir(VAULT_DIR, { recursive: true });
-  }
-}
-
 // --- Serialization ---
 
 function serializeFrontmatter(data: ObjectFrontmatter): string {
@@ -48,7 +33,6 @@ function serializeFrontmatter(data: ObjectFrontmatter): string {
     if (value === null || value === undefined) {
       lines.push(`${key}: null`);
     } else if (typeof value === "string" && (value.includes(":") || value.includes('"') || value.includes("\n") || value === "")) {
-      // Quote strings that contain special YAML characters
       lines.push(`${key}: "${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
     } else {
       lines.push(`${key}: ${value}`);
@@ -78,7 +62,6 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, string
     if (value === "null") {
       frontmatter[key] = null;
     } else if (value.startsWith('"') && value.endsWith('"')) {
-      // Unquote and unescape
       frontmatter[key] = value.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, "\\");
     } else {
       frontmatter[key] = value;
@@ -88,16 +71,9 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, string
   return { frontmatter, body };
 }
 
-// --- File operations ---
+// --- Object data type ---
 
-function objectFilePath(id: string): string {
-  return join(VAULT_DIR, `${id}.md`);
-}
-
-/**
- * Convert a database object (or create result) to a markdown file.
- */
-export function objectToMarkdown(obj: {
+export type ObjectData = {
   id: string;
   type: string;
   status: string;
@@ -113,7 +89,9 @@ export function objectToMarkdown(obj: {
   updatedAt: Date | string;
   metadata: string | null;
   bodyText: string;
-}): string {
+};
+
+export function objectToMarkdown(obj: ObjectData): string {
   const frontmatter: ObjectFrontmatter = {
     id: obj.id,
     type: obj.type,
@@ -134,9 +112,6 @@ export function objectToMarkdown(obj: {
   return serializeFrontmatter(frontmatter) + "\n" + obj.bodyText;
 }
 
-/**
- * Parse a markdown file's content into a VaultObject.
- */
 export function parseMarkdown(content: string): VaultObject | null {
   const { frontmatter, body } = parseFrontmatter(content);
 
@@ -164,11 +139,10 @@ export function parseMarkdown(content: string): VaultObject | null {
 }
 
 /**
- * Write an object to a .md file in the vault.
+ * Write an object to a .md file in the vault (source of truth).
  */
-export async function writeObjectFile(obj: Parameters<typeof objectToMarkdown>[0]): Promise<void> {
-  await ensureVaultDir();
-  const filePath = objectFilePath(obj.id);
+export async function writeObjectFile(vaultDir: string, obj: ObjectData): Promise<void> {
+  const filePath = join(vaultDir, `${obj.id}.md`);
   const markdown = objectToMarkdown(obj);
   await writeFile(filePath, markdown, "utf-8");
 }
@@ -176,8 +150,8 @@ export async function writeObjectFile(obj: Parameters<typeof objectToMarkdown>[0
 /**
  * Read an object from its .md file in the vault.
  */
-export async function readObjectFile(id: string): Promise<VaultObject | null> {
-  const filePath = objectFilePath(id);
+export async function readObjectFile(vaultDir: string, id: string): Promise<VaultObject | null> {
+  const filePath = join(vaultDir, `${id}.md`);
   if (!existsSync(filePath)) return null;
 
   const content = await readFile(filePath, "utf-8");
@@ -187,8 +161,8 @@ export async function readObjectFile(id: string): Promise<VaultObject | null> {
 /**
  * Delete an object's .md file from the vault.
  */
-export async function deleteObjectFile(id: string): Promise<void> {
-  const filePath = objectFilePath(id);
+export async function deleteObjectFile(vaultDir: string, id: string): Promise<void> {
+  const filePath = join(vaultDir, `${id}.md`);
   if (existsSync(filePath)) {
     await unlink(filePath);
   }
@@ -197,15 +171,15 @@ export async function deleteObjectFile(id: string): Promise<void> {
 /**
  * Scan the vault directory and return all parsed objects.
  */
-export async function scanVault(): Promise<VaultObject[]> {
-  await ensureVaultDir();
+export async function scanVault(vaultDir: string): Promise<VaultObject[]> {
+  if (!existsSync(vaultDir)) return [];
 
-  const files = await readdir(VAULT_DIR);
+  const files = await readdir(vaultDir);
   const mdFiles = files.filter((f) => f.endsWith(".md"));
   const objects: VaultObject[] = [];
 
   for (const file of mdFiles) {
-    const content = await readFile(join(VAULT_DIR, file), "utf-8");
+    const content = await readFile(join(vaultDir, file), "utf-8");
     const obj = parseMarkdown(content);
     if (obj) {
       objects.push(obj);
@@ -217,13 +191,11 @@ export async function scanVault(): Promise<VaultObject[]> {
 
 /**
  * Rebuild the SQLite index from vault .md files.
- * Upserts each object found in the vault into the database.
  */
-export async function rebuildIndex(userId: string): Promise<{ synced: number; errors: number }> {
-  // Dynamic import to avoid circular dependency
+export async function rebuildIndex(vaultDir: string, userId: string): Promise<{ synced: number; errors: number }> {
   const { prisma } = await import("./prisma");
 
-  const objects = await scanVault();
+  const objects = await scanVault(vaultDir);
   let synced = 0;
   let errors = 0;
 
