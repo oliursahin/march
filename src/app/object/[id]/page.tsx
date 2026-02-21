@@ -32,7 +32,7 @@ export default async function ObjectPage({
           <div className="flex items-center justify-between mb-8">
             <Link
               href={object.type === "PAGE" ? "/pages" : "/objects"}
-              className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
+              className="text-xs text-gray-900 hover:text-gray-900 transition-colors"
             >
               &larr; Back
             </Link>

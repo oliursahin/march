@@ -107,7 +107,7 @@ export function DateInput({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="today, tomorrow, fri, 23rd feb..."
-            className="text-xs text-gray-700 bg-gray-50 rounded px-2 py-1 w-56 outline-none placeholder:text-gray-400"
+            className="text-xs text-gray-900 bg-gray-50 rounded px-2 py-1 w-56 outline-none placeholder:text-gray-400"
             autoFocus
           />
 
@@ -140,13 +140,13 @@ export function DateInput({
         >
           {currentDate ? (
             <span className="flex items-center gap-2">
-              <span className="text-gray-700">{formatNice(currentDate)}</span>
+              <span className="text-gray-900">{formatNice(currentDate)}</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation();
                   clearDate();
                 }}
-                className="text-gray-300 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-900"
               >
                 &times;
               </span>

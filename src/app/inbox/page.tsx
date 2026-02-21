@@ -4,10 +4,17 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { ObjectList } from "@/components/object-list";
 import { CommandBar } from "@/components/command-bar";
+// import { TwitterSync } from "@/components/twitter-sync";
 
 export default async function InboxPage() {
   const auth = await getAuthenticatedUser();
   if (!auth) redirect("/signin");
+
+  // TODO: uncomment when Twitter API is configured
+  // const twitterTokens = await prisma.twitterTokens.findUnique({
+  //   where: { userId: auth.userId },
+  //   select: { id: true },
+  // });
 
   const objects = await prisma.emailObject.findMany({
     where: { userId: auth.userId, status: "INBOX" },
@@ -30,11 +37,12 @@ export default async function InboxPage() {
       <Nav />
       <main className="flex-1 flex items-start justify-center p-6">
         <div className="max-w-2xl w-full mx-auto px-4 py-10">
-          <h1 className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-6">Inbox</h1>
+          <h1 className="text-xs font-medium text-gray-900 uppercase tracking-widest mb-6">Inbox</h1>
           <ObjectList objects={objects} status="INBOX" />
         </div>
       </main>
       <CommandBar />
+      {/* <TwitterSync enabled={!!twitterTokens} /> */}
     </div>
   );
 }

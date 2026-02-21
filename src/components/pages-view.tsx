@@ -34,7 +34,7 @@ export function PagesView({ pages }: { pages: PageItem[] }) {
               className={`w-full text-left px-2 py-1.5 text-sm truncate transition-colors ${
                 page.id === activeId
                   ? "text-gray-900"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-400 hover:text-gray-900"
               }`}
             >
               {page.subject || "Untitled"}

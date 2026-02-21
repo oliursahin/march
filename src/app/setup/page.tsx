@@ -60,38 +60,38 @@ export default function SetupPage() {
     <div className="flex flex-col items-center justify-center min-h-screen gap-8">
       <div className="text-center">
         <h1 className="text-lg font-medium text-gray-900 mb-1">Set up your vault</h1>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-900">
           Choose a name and location for your vault
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Vault name</label>
+          <label className="text-xs text-gray-800">Vault name</label>
           <input
             type="text"
             placeholder="My Brain"
             value={vaultName}
             onChange={(e) => setVaultName(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400"
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-700 focus:outline-none focus:border-gray-400"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Vault location</label>
+          <label className="text-xs text-gray-800">Vault location</label>
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="/Users/you/Documents/march-vault"
               value={vaultPath}
               onChange={(e) => setVaultPath(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400"
+              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-700 focus:outline-none focus:border-gray-400"
             />
             {isTauri && (
               <button
                 type="button"
                 onClick={handlePickFolder}
-                className="px-3 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:border-gray-400 transition-colors"
+                className="px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg hover:border-gray-400 transition-colors"
               >
                 Browse
               </button>

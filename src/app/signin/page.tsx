@@ -100,11 +100,11 @@ export default function SignInPage() {
     <div className="flex flex-col items-center justify-center min-h-screen gap-8">
       <div className="text-center">
         <h1 className="text-lg font-medium text-gray-900 mb-1">March</h1>
-        <p className="text-xs text-gray-400">Your second brain</p>
+        <p className="text-xs text-gray-900">Your second brain</p>
       </div>
 
       {waiting ? (
-        <p className="text-sm text-gray-400 animate-pulse">
+        <p className="text-sm text-gray-900 animate-pulse">
           Waiting for sign in...
         </p>
       ) : (
@@ -115,14 +115,14 @@ export default function SignInPage() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-700 focus:outline-none focus:border-gray-400"
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-transparent text-gray-900 placeholder:text-gray-700 focus:outline-none focus:border-gray-400"
             />
             {error && <p className="text-xs text-red-400">{error}</p>}
             <button
@@ -136,13 +136,13 @@ export default function SignInPage() {
 
           <div className="flex items-center gap-3 w-full">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-300">or</span>
+            <span className="text-xs text-gray-800">or</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
           <button
             onClick={handleGoogleLogin}
-            className="px-5 py-2 text-sm text-gray-400 hover:text-gray-900 transition-colors"
+            className="px-5 py-2 text-sm text-gray-900 hover:text-gray-900 transition-colors"
           >
             Sign in with Google
           </button>

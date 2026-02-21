@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #111111;
-  --muted: #9ca3af;
+  --muted: #374151;
   --border: #f0f0f0;
   --accent: #111111;
 }
@@ -161,7 +161,7 @@ body {
 .prose-editor blockquote {
   border-left: 2px solid #e5e7eb;
   padding-left: 0.75em;
-  color: #6b7280;
+  color: #374151;
   font-style: italic;
   margin: 0.5em 0;
 }

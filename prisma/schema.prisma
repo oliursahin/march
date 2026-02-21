@@ -14,10 +14,12 @@ model User {
   avatarUrl   String?
   vaultName   String?
   vaultPath   String?
+  apiKey      String?       @unique
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  objects     EmailObject[]
-  gmailTokens GmailTokens?
+  objects       EmailObject[]
+  gmailTokens   GmailTokens?
+  twitterTokens TwitterTokens?
 }
 
 model GmailTokens {
@@ -28,6 +30,21 @@ model GmailTokens {
   expiresAt    DateTime?
   historyId    String?
   email        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TwitterTokens {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime?
+  xUserId      String
+  xUsername     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
