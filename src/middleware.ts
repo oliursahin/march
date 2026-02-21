@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { SESSION_COOKIE_NAME, PUBLIC_PATHS, IGNORED_PREFIXES } from "@/lib/constants";
+import { SESSION_COOKIE_NAME, VAULT_CONFIGURED_COOKIE, PUBLIC_PATHS, IGNORED_PREFIXES } from "@/lib/constants";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -24,6 +24,13 @@ export async function middleware(request: NextRequest) {
   try {
     const secret = new TextEncoder().encode(process.env.SESSION_SECRET);
     await jwtVerify(sessionCookie, secret);
+
+    // Check if vault is configured
+    const vaultConfigured = request.cookies.get(VAULT_CONFIGURED_COOKIE)?.value;
+    if (!vaultConfigured && pathname !== "/setup") {
+      return NextResponse.redirect(new URL("/setup", request.url));
+    }
+
     return NextResponse.next();
   } catch {
     // Invalid or expired JWT — clear the cookie and redirect
