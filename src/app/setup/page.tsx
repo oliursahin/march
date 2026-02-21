@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SetupPage() {
@@ -8,10 +8,12 @@ export default function SetupPage() {
   const [vaultPath, setVaultPath] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isTauri, setIsTauri] = useState(false);
   const router = useRouter();
 
-  const isTauri =
-    typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  useEffect(() => {
+    setIsTauri("__TAURI_INTERNALS__" in window);
+  }, []);
 
   const handlePickFolder = async () => {
     if (!isTauri) return;
