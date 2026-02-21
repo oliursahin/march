@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/session";
 import { redirect, notFound } from "next/navigation";
 import { Nav } from "@/components/nav";
-import { ObjectDetail } from "@/components/object-detail";
+import { ObjectEditor } from "@/components/object-editor";
 import { StatusActions } from "@/components/status-actions";
 import { CommandBar } from "@/components/command-bar";
 import Link from "next/link";
@@ -37,7 +37,11 @@ export default async function ObjectPage({
             </Link>
             <StatusActions objectId={object.id} currentStatus={object.status} />
           </div>
-          <ObjectDetail object={object} />
+          <ObjectEditor
+            objectId={object.id}
+            initialBody={object.bodyText}
+            initialSubject={object.subject}
+          />
         </div>
       </main>
       <CommandBar />

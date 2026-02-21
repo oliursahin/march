@@ -66,9 +66,12 @@ export function CommandBar() {
         setValue("");
         setOpen(false);
         router.refresh();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.error("Create failed:", res.status, err);
       }
-    } catch {
-      // silently fail
+    } catch (e) {
+      console.error("Create request error:", e);
     } finally {
       setSubmitting(false);
     }

@@ -43,6 +43,7 @@ model EmailObject {
   bodyText        String
   receivedAt      DateTime
   gmailUrl        String
+  dueDate         DateTime?
   metadata        Json?
   status          EmailStatus @default(INBOX)
   statusChangedAt DateTime    @default(now())
