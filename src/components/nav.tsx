@@ -5,10 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   { label: "today", href: "/" },
-  { label: "objects", href: "/objects" },
   { label: "inbox", href: "/inbox" },
-  { label: "later", href: "/later" },
-  { label: "archived", href: "/archived" },
+  { label: "pages", href: "/pages" },
+  { label: "objects", href: "/objects" },
 ];
 
 export function Nav() {

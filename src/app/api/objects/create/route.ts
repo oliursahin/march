@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { ObjectType } from "@/generated/prisma/enums";
+
+const VALID_TYPES = new Set(Object.values(ObjectType));
 
 export async function POST(req: NextRequest) {
   const auth = await getAuthenticatedUser();
@@ -9,7 +12,8 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { content } = body;
+  const { content, type } = body;
+  const objectType = type && VALID_TYPES.has(type) ? type : "NOTE";
 
   if (!content || typeof content !== "string" || content.trim().length === 0) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
@@ -35,6 +39,7 @@ export async function POST(req: NextRequest) {
         bodyText: trimmed,
         receivedAt: new Date(),
         gmailUrl: isUrl ? trimmed : "",
+        type: objectType,
         status: "INBOX",
       },
     });

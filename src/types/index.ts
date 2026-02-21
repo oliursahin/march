@@ -1,6 +1,6 @@
-import type { EmailStatus } from "@/generated/prisma/enums";
+import type { EmailStatus, ObjectType } from "@/generated/prisma/enums";
 
-export type { EmailStatus };
+export type { EmailStatus, ObjectType };
 
 export interface SessionPayload {
   sub: string;
@@ -21,11 +21,7 @@ export interface EmailObjectListItem {
   senderEmail: string;
   receivedAt: Date;
   status: EmailStatus;
+  type: ObjectType;
   bodyText: string;
+  dueDate: Date | null;
 }
-
-export const VALID_TRANSITIONS: Record<EmailStatus, EmailStatus[]> = {
-  INBOX: ["LATER", "ARCHIVED"],
-  LATER: ["INBOX", "ARCHIVED"],
-  ARCHIVED: ["INBOX"],
-};

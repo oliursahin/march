@@ -42,11 +42,19 @@ export function DateInput({
       setOpen(false);
       setValue("");
 
-      await fetch(`/api/objects/${objectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dueDate: date.toISOString() }),
-      });
+      // Set date + mark as PLANNED
+      await Promise.all([
+        fetch(`/api/objects/${objectId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dueDate: date.toISOString() }),
+        }),
+        fetch(`/api/objects/${objectId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "PLANNED" }),
+        }),
+      ]);
     },
     [objectId]
   );
@@ -56,11 +64,19 @@ export function DateInput({
     setOpen(false);
     setValue("");
 
-    await fetch(`/api/objects/${objectId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dueDate: null }),
-    });
+    // Clear date + move back to INBOX
+    await Promise.all([
+      fetch(`/api/objects/${objectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dueDate: null }),
+      }),
+      fetch(`/api/objects/${objectId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "INBOX" }),
+      }),
+    ]);
   }, [objectId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -136,7 +152,7 @@ export function DateInput({
               </span>
             </span>
           ) : (
-            "Add date"
+            "plan"
           )}
         </button>
       )}

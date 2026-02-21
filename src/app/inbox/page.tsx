@@ -19,7 +19,9 @@ export default async function InboxPage() {
       senderEmail: true,
       receivedAt: true,
       status: true,
+      type: true,
       bodyText: true,
+      dueDate: true,
     },
   });
 

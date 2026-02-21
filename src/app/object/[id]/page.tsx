@@ -31,7 +31,7 @@ export default async function ObjectPage({
         <div className="max-w-2xl w-full mx-auto px-4 py-10">
           <div className="flex items-center justify-between mb-8">
             <Link
-              href={object.status === "LATER" ? "/later" : object.status === "ARCHIVED" ? "/archived" : "/inbox"}
+              href={object.type === "PAGE" ? "/pages" : "/objects"}
               className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
             >
               &larr; Back

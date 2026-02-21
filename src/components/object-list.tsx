@@ -3,10 +3,8 @@ import { EmptyState } from "./empty-state";
 import type { EmailObjectListItem } from "@/types";
 
 const EMPTY_MESSAGES: Record<string, string> = {
-  ALL: "No objects yet.",
-  INBOX: "No emails in inbox. Sync to fetch new messages.",
-  LATER: "No emails marked for later.",
-  ARCHIVED: "No archived emails.",
+  ALL: "No objects yet. Press ⌘K to create one.",
+  INBOX: "Inbox is empty.",
 };
 
 export function ObjectList({
