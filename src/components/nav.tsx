@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { label: "today", href: "/" },
   { label: "inbox", href: "/inbox" },
-  { label: "pages", href: "/pages" },
+  { label: "lists", href: "/lists" },
   { label: "objects", href: "/objects" },
 ];
 
@@ -42,20 +42,6 @@ export function Nav() {
           );
         })}
 
-        <div className="h-2" />
-
-        <Link
-          href="/settings"
-          className={`
-            text-sm transition-all duration-200 ease-out
-            ${pathname.startsWith("/settings")
-              ? "text-gray-900 underline underline-offset-2"
-              : "text-gray-400 hover:text-gray-900"
-            }
-          `}
-        >
-          settings
-        </Link>
       </nav>
     </div>
   );

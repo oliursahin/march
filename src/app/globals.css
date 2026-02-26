@@ -38,7 +38,13 @@ body {
 }
 
 .prose-editor p {
-  margin: 0.125em 0;
+  margin: 0.35em 0;
+}
+
+.prose-editor p br {
+  display: block;
+  content: "";
+  margin: 0;
 }
 
 .prose-editor h1 {
