@@ -24,7 +24,7 @@ const TYPE_LABELS: Record<string, string> = {
 const PAGES = [
   { label: "Today", href: "/" },
   { label: "Inbox", href: "/inbox" },
-  { label: "Lists", href: "/lists" },
+  // { label: "Lists", href: "/lists" },
   { label: "Objects", href: "/objects" },
   { label: "Settings", href: "/settings" },
 ];
