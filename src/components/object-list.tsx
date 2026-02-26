@@ -1,6 +1,6 @@
 import { ObjectRow } from "./object-row";
 import { EmptyState } from "./empty-state";
-import type { EmailObjectListItem } from "@/types";
+import type { ObjListItem } from "@/types";
 
 const EMPTY_MESSAGES: Record<string, string> = {
   ALL: "No objects yet. Press ⌘K to create one.",
@@ -11,7 +11,7 @@ export function ObjectList({
   objects,
   status,
 }: {
-  objects: EmailObjectListItem[];
+  objects: ObjListItem[];
   status: string;
 }) {
   if (objects.length === 0) {

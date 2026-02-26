@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: { findUnique: vi.fn() },
-    emailObject: { findMany: vi.fn(), create: vi.fn() },
+    obj: { findMany: vi.fn(), create: vi.fn() },
   },
 }));
 
@@ -58,8 +58,8 @@ describe("syncTwitterBookmarks", () => {
     vi.restoreAllMocks();
     vi.mocked(getValidTwitterToken).mockResolvedValue(mockToken);
     vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as never);
-    vi.mocked(prisma.emailObject.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.emailObject.create).mockResolvedValue({} as never);
+    vi.mocked(prisma.obj.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.obj.create).mockResolvedValue({} as never);
     vi.mocked(writeObjectFile).mockResolvedValue();
   });
 
@@ -87,11 +87,11 @@ describe("syncTwitterBookmarks", () => {
 
     expect(result).toEqual({ synced: 2, errors: 0 });
     expect(writeObjectFile).toHaveBeenCalledTimes(2);
-    expect(prisma.emailObject.create).toHaveBeenCalledTimes(2);
+    expect(prisma.obj.create).toHaveBeenCalledTimes(2);
   });
 
   it("deduplicates existing bookmarks", async () => {
-    vi.mocked(prisma.emailObject.findMany).mockResolvedValue([
+    vi.mocked(prisma.obj.findMany).mockResolvedValue([
       { gmailId: "tweet_tweet-1" },
     ] as never);
 
@@ -134,7 +134,7 @@ describe("syncTwitterBookmarks", () => {
     vi.mocked(writeObjectFile).mockImplementation(async () => {
       callOrder.push("vault");
     });
-    vi.mocked(prisma.emailObject.create).mockImplementation(async () => {
+    vi.mocked(prisma.obj.create).mockImplementation(async () => {
       callOrder.push("db");
       return {} as never;
     });
@@ -158,7 +158,7 @@ describe("syncTwitterBookmarks", () => {
   });
 
   it("continues when DB write fails (data safe in vault)", async () => {
-    vi.mocked(prisma.emailObject.create).mockRejectedValue(
+    vi.mocked(prisma.obj.create).mockRejectedValue(
       new Error("DB error")
     );
 

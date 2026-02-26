@@ -9,7 +9,7 @@ export default async function ObjectsPage() {
   const auth = await getAuthenticatedUser();
   if (!auth) redirect("/signin");
 
-  const objects = await prisma.emailObject.findMany({
+  const objects = await prisma.obj.findMany({
     where: { userId: auth.userId },
     orderBy: { receivedAt: "desc" },
     select: {

@@ -1,6 +1,6 @@
-import type { EmailStatus, ObjectType } from "@/generated/prisma/enums";
+import type { ObjectStatus, ObjectType } from "@/generated/prisma/enums";
 
-export type { EmailStatus, ObjectType };
+export type { ObjectStatus, ObjectType };
 
 export interface SessionPayload {
   sub: string;
@@ -14,13 +14,13 @@ export interface AuthenticatedUser {
   email: string;
 }
 
-export interface EmailObjectListItem {
+export interface ObjListItem {
   id: string;
   subject: string;
   senderName: string;
   senderEmail: string;
   receivedAt: Date;
-  status: EmailStatus;
+  status: ObjectStatus;
   type: ObjectType;
   bodyText: string;
   dueDate: Date | null;

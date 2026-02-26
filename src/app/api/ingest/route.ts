@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     await writeObjectFile(user.vaultPath, objectData);
 
     try {
-      await prisma.emailObject.create({ data: objectData });
+      await prisma.obj.create({ data: objectData });
     } catch (indexErr) {
       console.error("Index write failed (data safe in vault):", indexErr);
     }

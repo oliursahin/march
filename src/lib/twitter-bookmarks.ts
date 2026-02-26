@@ -37,7 +37,7 @@ export async function syncTwitterBookmarks(
   }
 
   // Get existing tweet IDs for deduplication
-  const existing = await prisma.emailObject.findMany({
+  const existing = await prisma.obj.findMany({
     where: {
       userId,
       type: "BOOKMARK",
@@ -134,7 +134,7 @@ export async function syncTwitterBookmarks(
 
         // 2. Index into SQLite (best-effort)
         try {
-          await prisma.emailObject.create({ data: objectData });
+          await prisma.obj.create({ data: objectData });
         } catch (indexErr) {
           console.error("Index write failed (data safe in vault):", indexErr);
         }

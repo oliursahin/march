@@ -1,7 +1,7 @@
 import { formatDate } from "@/lib/utils";
-import type { EmailObject } from "@/generated/prisma/client";
+import type { Obj } from "@/generated/prisma/client";
 
-export function ObjectDetail({ object }: { object: EmailObject }) {
+export function ObjectDetail({ object }: { object: Obj }) {
   return (
     <div>
       <h1 className="text-lg font-medium text-gray-900 mb-3">{object.subject}</h1>

@@ -5,7 +5,7 @@ import { VALID_TRANSITIONS } from "@/types";
 // Mock prisma
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    emailObject: {
+    obj: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
@@ -63,8 +63,8 @@ describe("GET /api/objects", () => {
 
   it("returns INBOX objects by default", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findMany).mockResolvedValue([mockObject] as any);
-    vi.mocked(prisma.emailObject.count).mockResolvedValue(1);
+    vi.mocked(prisma.obj.findMany).mockResolvedValue([mockObject] as any);
+    vi.mocked(prisma.obj.count).mockResolvedValue(1);
 
     const res = await listObjects(createRequest("/api/objects"));
     const data = await res.json();
@@ -72,7 +72,7 @@ describe("GET /api/objects", () => {
     expect(res.status).toBe(200);
     expect(data.objects).toHaveLength(1);
     expect(data.total).toBe(1);
-    expect(vi.mocked(prisma.emailObject.findMany)).toHaveBeenCalledWith(
+    expect(vi.mocked(prisma.obj.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: "user-123", status: "INBOX" },
       })
@@ -81,12 +81,12 @@ describe("GET /api/objects", () => {
 
   it("returns LATER objects when status=LATER", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.emailObject.count).mockResolvedValue(0);
+    vi.mocked(prisma.obj.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.obj.count).mockResolvedValue(0);
 
     const res = await listObjects(createRequest("/api/objects?status=LATER"));
     expect(res.status).toBe(200);
-    expect(vi.mocked(prisma.emailObject.findMany)).toHaveBeenCalledWith(
+    expect(vi.mocked(prisma.obj.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: "user-123", status: "LATER" },
       })
@@ -117,7 +117,7 @@ describe("GET /api/objects/[id]", () => {
 
   it("returns the object", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue(mockObject as any);
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue(mockObject as any);
 
     const res = await getObject(createRequest("/api/objects/obj-1"), {
       params: Promise.resolve({ id: "obj-1" }),
@@ -130,7 +130,7 @@ describe("GET /api/objects/[id]", () => {
 
   it("returns 404 for non-existent ID", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue(null);
 
     const res = await getObject(createRequest("/api/objects/nonexistent"), {
       params: Promise.resolve({ id: "nonexistent" }),
@@ -159,8 +159,8 @@ describe("PATCH /api/objects/[id]/status", () => {
 
   it("transitions INBOX to LATER", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue(mockObject as any);
-    vi.mocked(prisma.emailObject.update).mockResolvedValue({
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue(mockObject as any);
+    vi.mocked(prisma.obj.update).mockResolvedValue({
       ...mockObject,
       status: "LATER",
     } as any);
@@ -181,8 +181,8 @@ describe("PATCH /api/objects/[id]/status", () => {
 
   it("transitions INBOX to ARCHIVED", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue(mockObject as any);
-    vi.mocked(prisma.emailObject.update).mockResolvedValue({
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue(mockObject as any);
+    vi.mocked(prisma.obj.update).mockResolvedValue({
       ...mockObject,
       status: "ARCHIVED",
     } as any);
@@ -200,11 +200,11 @@ describe("PATCH /api/objects/[id]/status", () => {
 
   it("transitions LATER to INBOX", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue({
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue({
       ...mockObject,
       status: "LATER",
     } as any);
-    vi.mocked(prisma.emailObject.update).mockResolvedValue({
+    vi.mocked(prisma.obj.update).mockResolvedValue({
       ...mockObject,
       status: "INBOX",
     } as any);
@@ -222,11 +222,11 @@ describe("PATCH /api/objects/[id]/status", () => {
 
   it("transitions ARCHIVED to INBOX", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue({
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue({
       ...mockObject,
       status: "ARCHIVED",
     } as any);
-    vi.mocked(prisma.emailObject.update).mockResolvedValue({
+    vi.mocked(prisma.obj.update).mockResolvedValue({
       ...mockObject,
       status: "INBOX",
     } as any);
@@ -244,7 +244,7 @@ describe("PATCH /api/objects/[id]/status", () => {
 
   it("rejects ARCHIVED to LATER (invalid transition)", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue({
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue({
       ...mockObject,
       status: "ARCHIVED",
     } as any);
@@ -278,7 +278,7 @@ describe("PATCH /api/objects/[id]/status", () => {
 
   it("returns 404 for non-existent object", async () => {
     vi.mocked(getAuthenticatedUser).mockResolvedValue(mockUser);
-    vi.mocked(prisma.emailObject.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.obj.findUnique).mockResolvedValue(null);
 
     const res = await updateStatus(
       createRequest("/api/objects/nonexistent/status", {

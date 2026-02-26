@@ -16,7 +16,7 @@ export default async function InboxPage() {
   //   select: { id: true },
   // });
 
-  const objects = await prisma.emailObject.findMany({
+  const objects = await prisma.obj.findMany({
     where: { userId: auth.userId, status: "INBOX" },
     orderBy: { receivedAt: "desc" },
     select: {
