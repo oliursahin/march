@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { EmailStatus } from "@/generated/prisma/enums";
+import { ObjectStatus, ObjectType } from "@/generated/prisma/enums";
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthenticatedUser();
@@ -11,20 +11,30 @@ export async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams;
   const statusParam = (searchParams.get("status") || "INBOX").toUpperCase();
+  const search = searchParams.get("search");
   const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50")));
 
   // Validate status
-  if (!Object.values(EmailStatus).includes(statusParam as EmailStatus)) {
+  if (!Object.values(ObjectStatus).includes(statusParam as ObjectStatus)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  const status = statusParam as EmailStatus;
+  const status = statusParam as ObjectStatus;
   const skip = (page - 1) * limit;
 
+  const where: Record<string, unknown> = { userId: auth.userId, status };
+  if (search) {
+    where.subject = { contains: search };
+    // When searching, don't filter by status
+    delete where.status;
+    // Exclude LIST objects from search results (lists aren't addable to other lists)
+    where.type = { not: ObjectType.LIST };
+  }
+
   const [objects, total] = await Promise.all([
-    prisma.emailObject.findMany({
-      where: { userId: auth.userId, status },
+    prisma.obj.findMany({
+      where,
       orderBy: { receivedAt: "desc" },
       skip,
       take: limit,
@@ -35,12 +45,12 @@ export async function GET(request: NextRequest) {
         senderEmail: true,
         receivedAt: true,
         status: true,
+        type: true,
         bodyText: true,
+        dueDate: true,
       },
     }),
-    prisma.emailObject.count({
-      where: { userId: auth.userId, status },
-    }),
+    prisma.obj.count({ where }),
   ]);
 
   return NextResponse.json({ objects, total, page });

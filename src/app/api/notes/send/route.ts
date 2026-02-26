@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Store locally
-    await prisma.emailObject.create({
+    await prisma.obj.create({
       data: {
         gmailId: gmailMessageId,
         userId: auth.userId,
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         bodyText: content.trim(),
         receivedAt: new Date(),
         gmailUrl: `https://mail.google.com/mail/u/0/#inbox/${gmailMessageId}`,
+        type: "JOURNAL",
         status: "INBOX",
         metadata: { label: "march_today" },
       },
