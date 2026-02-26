@@ -5,15 +5,6 @@ import { timeAgo, truncate } from "@/lib/utils";
 import { formatNice } from "@/lib/parse-date";
 import type { ObjListItem } from "@/types";
 
-const TYPE_LABELS: Record<string, string> = {
-  NOTE: "note",
-  TODO: "todo",
-  LIST: "list",
-  BOOKMARK: "bookmark",
-  URL: "url",
-  JOURNAL: "journal",
-};
-
 export function ObjectRow({ object }: { object: ObjListItem }) {
   return (
     <Link
@@ -22,9 +13,6 @@ export function ObjectRow({ object }: { object: ObjListItem }) {
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs text-gray-400">
-            {TYPE_LABELS[object.type] || object.type}
-          </span>
           <span className="text-sm font-medium text-gray-900 truncate">
             {object.subject}
           </span>

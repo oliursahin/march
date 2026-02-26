@@ -16,6 +16,10 @@
   --color-accent: var(--accent);
 }
 
+html {
+  font-size: 106.25%;
+}
+
 body {
   background: #ffffff;
   color: #111111;
