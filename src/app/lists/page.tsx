@@ -49,7 +49,7 @@ export default async function ListsPage() {
     <ListProvider>
       <div className="min-h-screen">
         <Nav />
-        <main className="flex-1 flex items-start p-6 pl-24">
+        <main className="flex-1 flex items-start p-6 pl-52">
           <div className="max-w-3xl w-full flex gap-4 px-4 py-10">
             <ListsView lists={lists} />
           </div>

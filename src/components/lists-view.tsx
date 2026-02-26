@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ObjectEditor } from "./object-editor";
 import { DateInput } from "./date-input";
-import { StatusActions } from "./status-actions";
 import { useActiveList } from "@/lib/list-context";
 import { timeAgo, truncate } from "@/lib/utils";
 import type { ObjectStatus, ObjectType } from "@/types";
@@ -103,7 +102,6 @@ export function ListsView({ lists }: { lists: ListViewItem[] }) {
           <>
             <div className="flex items-center justify-end gap-4 mb-8">
               <DateInput objectId={activeList.id} initialDate={activeList.dueDate} />
-              <StatusActions objectId={activeList.id} currentStatus={activeList.status} />
             </div>
             <ObjectEditor
               key={activeList.id}
@@ -112,55 +110,30 @@ export function ListsView({ lists }: { lists: ListViewItem[] }) {
               initialSubject={activeList.subject}
             />
 
-            {/* Child objects */}
-            <div className="mt-10 border-t border-gray-100 pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs text-gray-400">
-                  {activeList.listItems.length} item{activeList.listItems.length !== 1 ? "s" : ""}
-                </p>
-                <p className="text-[11px] text-gray-400">
-                  &#8984;K to add
-                </p>
-              </div>
-
-              {activeList.listItems.length > 0 ? (
-                <div className="divide-y divide-gray-50">
-                  {activeList.listItems.map((li) => (
-                    <div
-                      key={li.id}
-                      className="flex items-start justify-between gap-4 py-3 group"
+            {/* Child objects — compact list */}
+            {activeList.listItems.length > 0 && (
+              <div className="mt-10 border-t border-gray-100 pt-6 space-y-1">
+                {activeList.listItems.map((li) => (
+                  <div
+                    key={li.id}
+                    className="flex items-center justify-between gap-2 group"
+                  >
+                    <Link
+                      href={`/object/${li.object.id}`}
+                      className="text-sm text-gray-900 truncate hover:underline underline-offset-2"
                     >
-                      <Link
-                        href={`/object/${li.object.id}`}
-                        className="flex-1 min-w-0"
-                      >
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-medium text-gray-900 truncate">
-                            {li.object.subject}
-                          </span>
-                          <span className="text-xs text-gray-400 flex-shrink-0">
-                            {timeAgo(li.object.receivedAt)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">
-                          {truncate(li.object.bodyText, 120)}
-                        </p>
-                      </Link>
-                      <button
-                        onClick={() => removeItem(li.id)}
-                        className="text-xs text-gray-400 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 shrink-0 pt-1"
-                      >
-                        remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400">
-                  No items yet. Add objects to this list.
-                </p>
-              )}
-            </div>
+                      {li.object.subject}
+                    </Link>
+                    <button
+                      onClick={() => removeItem(li.id)}
+                      className="text-xs text-gray-400 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    >
+                      remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         ) : (
           <div className="text-sm text-gray-400 pt-6">
