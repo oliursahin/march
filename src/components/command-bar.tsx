@@ -1,15 +1,81 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { timeAgo } from "@/lib/utils";
+import { useActiveList } from "@/lib/list-context";
+
+interface SearchResult {
+  id: string;
+  subject: string;
+  type: string;
+  receivedAt: string;
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  NOTE: "note",
+  TODO: "todo",
+  LIST: "list",
+  BOOKMARK: "bookmark",
+  URL: "url",
+  JOURNAL: "journal",
+};
+
+const PAGES = [
+  { label: "Today", href: "/" },
+  { label: "Inbox", href: "/inbox" },
+  { label: "Lists", href: "/lists" },
+  { label: "Objects", href: "/objects" },
+  { label: "Settings", href: "/settings" },
+];
 
 export function CommandBar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const listContext = useActiveList();
+  const activeList = listContext?.activeList ?? null;
+
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const trimmed = query.trim();
+  const hasQuery = trimmed.length > 0;
+
+  // Filter pages by query (show all when empty)
+  const matchingPages = useMemo(() => {
+    if (!hasQuery) return PAGES;
+    const lower = trimmed.toLowerCase();
+    return PAGES.filter((p) => p.label.toLowerCase().includes(lower));
+  }, [trimmed, hasQuery]);
+
+  // Filter results for "add to list" (exclude already-added objects)
+  const addableResults = useMemo(() => {
+    if (!activeList) return [];
+    return results.filter(
+      (r) => !activeList.existingObjectIds.includes(r.id)
+    );
+  }, [results, activeList]);
+
+  // Row indices: pages, then add-to-list OR objects, then create
+  const showAddToList = activeList !== null && hasQuery;
+  const displayedResults = showAddToList ? addableResults : results;
+
+  const totalRows =
+    matchingPages.length + displayedResults.length + (hasQuery ? 1 : 0);
+  const resultsStartIndex = matchingPages.length;
+  const createIndex = matchingPages.length + displayedResults.length;
+
+  // Reset selection when results or pages change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [results, matchingPages.length]);
 
   // Cmd+K to toggle
   useEffect(() => {
@@ -26,8 +92,7 @@ export function CommandBar() {
 
       if (e.key === "Escape" && open) {
         e.preventDefault();
-        setOpen(false);
-        setValue("");
+        close();
       }
     };
 
@@ -40,9 +105,8 @@ export function CommandBar() {
     if (!open) return;
 
     const handleClick = (e: MouseEvent) => {
-      if (barRef.current && !barRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setValue("");
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        close();
       }
     };
 
@@ -50,65 +114,274 @@ export function CommandBar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const handleSubmit = useCallback(async () => {
-    const trimmed = value.trim();
-    if (!trimmed || submitting) return;
+  // Debounced search
+  useEffect(() => {
+    if (!open) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!hasQuery) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/objects?search=${encodeURIComponent(trimmed)}&limit=6`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setResults(data.objects || []);
+        }
+      } catch {
+        // Silently fail
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [trimmed, hasQuery, open]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+    setSelectedIndex(0);
+  }, []);
+
+  const handleCreate = useCallback(async () => {
+    if (!hasQuery || submitting) return;
 
     setSubmitting(true);
     try {
       const res = await fetch("/api/objects/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: trimmed }),
+        body: JSON.stringify({
+          content: trimmed,
+          ...(pathname === "/lists" && { type: "LIST" }),
+        }),
       });
 
       if (res.ok) {
-        setValue("");
-        setOpen(false);
+        close();
         router.refresh();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        console.error("Create failed:", res.status, err);
       }
     } catch (e) {
-      console.error("Create request error:", e);
+      console.error("Create failed:", e);
     } finally {
       setSubmitting(false);
     }
-  }, [value, submitting, router]);
+  }, [trimmed, hasQuery, submitting, pathname, router, close]);
+
+  const handleAddToList = useCallback(
+    async (objectId: string) => {
+      if (!activeList || submitting) return;
+
+      setSubmitting(true);
+      try {
+        const res = await fetch(`/api/lists/${activeList.id}/items`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objectId }),
+        });
+
+        if (res.ok) {
+          close();
+          router.refresh();
+        }
+      } catch (e) {
+        console.error("Add to list failed:", e);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [activeList, submitting, close, router]
+  );
+
+  const handleSelect = useCallback(
+    (index: number) => {
+      if (index < matchingPages.length) {
+        const page = matchingPages[index];
+        close();
+        router.push(page.href);
+      } else if (index < createIndex) {
+        const obj = displayedResults[index - resultsStartIndex];
+        if (showAddToList) {
+          handleAddToList(obj.id);
+        } else {
+          close();
+          router.push(`/object/${obj.id}`);
+        }
+      } else if (index === createIndex && hasQuery) {
+        handleCreate();
+      }
+    },
+    [
+      matchingPages,
+      displayedResults,
+      resultsStartIndex,
+      createIndex,
+      hasQuery,
+      showAddToList,
+      handleAddToList,
+      handleCreate,
+      close,
+      router,
+    ]
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      handleSubmit();
+      setSelectedIndex((i) => (totalRows > 0 ? (i + 1) % totalRows : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((i) =>
+        totalRows > 0 ? (i - 1 + totalRows) % totalRows : 0
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (totalRows > 0) {
+        handleSelect(selectedIndex);
+      }
     }
   };
 
   if (!open) return null;
 
+  const createLabel = pathname === "/lists" ? "Create list" : "Create";
+  const resultsLabel =
+    showAddToList
+      ? `Add to "${activeList?.name}"`
+      : "Objects";
+
   return (
-    <div className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 bg-black/5" />
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-xl px-4">
-        <div
-          ref={barRef}
-          className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm"
-        >
-          <span className="text-gray-400 text-sm select-none">+</span>
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh]">
+      <div className="absolute inset-0 bg-black/20" onClick={close} />
+      <div
+        ref={modalRef}
+        className="relative w-full max-w-[480px] mx-4 bg-gray-50 rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+      >
+        {/* Search input */}
+        <div className="flex items-center gap-2.5 px-4 py-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gray-400 shrink-0"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
           <input
             ref={inputRef}
             type="text"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Insert a link, or just plain text..."
+            placeholder="Type a command..."
             className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
             disabled={submitting}
           />
-          <kbd className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 select-none">
-            esc
-          </kbd>
         </div>
+
+        {/* Content */}
+        {(matchingPages.length > 0 || displayedResults.length > 0 || hasQuery) && (
+          <div className="border-t border-gray-100 max-h-[50vh] overflow-y-auto">
+            {/* Go to pages */}
+            {matchingPages.length > 0 && (
+              <div>
+                <p className="px-4 pt-2.5 pb-0.5 text-[11px] text-gray-400">
+                  Go to
+                </p>
+                {matchingPages.map((page, i) => (
+                  <button
+                    key={page.href}
+                    onClick={() => handleSelect(i)}
+                    onMouseEnter={() => setSelectedIndex(i)}
+                    className={`w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors ${
+                      selectedIndex === i ? "bg-gray-100" : ""
+                    }`}
+                  >
+                    <span className="text-xs text-gray-900">{page.label}</span>
+                    <span className="text-[11px] text-gray-400">
+                      {page.href}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Search results / Add to list */}
+            {displayedResults.length > 0 && (
+              <div>
+                <p className="px-4 pt-2.5 pb-0.5 text-[11px] text-gray-400">
+                  {resultsLabel}
+                </p>
+                {displayedResults.map((obj, i) => {
+                  const rowIndex = resultsStartIndex + i;
+                  return (
+                    <button
+                      key={obj.id}
+                      onClick={() => handleSelect(rowIndex)}
+                      onMouseEnter={() => setSelectedIndex(rowIndex)}
+                      className={`w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors ${
+                        selectedIndex === rowIndex ? "bg-gray-100" : ""
+                      }`}
+                    >
+                      <span className="text-xs text-gray-900 truncate">
+                        {obj.subject}
+                      </span>
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <span className="text-[11px] text-gray-400">
+                          {timeAgo(obj.receivedAt)}
+                        </span>
+                        <span className="text-[11px] text-gray-400">
+                          {TYPE_LABELS[obj.type] || obj.type}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Create action */}
+            {hasQuery && (
+              <>
+                {(matchingPages.length > 0 || displayedResults.length > 0) && (
+                  <div className="border-t border-gray-100" />
+                )}
+                <button
+                  onClick={() => handleSelect(createIndex)}
+                  onMouseEnter={() => setSelectedIndex(createIndex)}
+                  className={`w-full text-left px-4 py-2 flex items-center gap-2 transition-colors ${
+                    selectedIndex === createIndex ? "bg-gray-100" : ""
+                  }`}
+                  disabled={submitting}
+                >
+                  <span className="text-xs text-gray-400">+</span>
+                  <span className="text-xs text-gray-900">
+                    {createLabel} &ldquo;{trimmed}&rdquo;
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
