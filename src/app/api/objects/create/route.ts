@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Index into SQLite (best-effort)
     try {
-      await prisma.emailObject.create({ data: objectData });
+      await prisma.obj.create({ data: objectData });
     } catch (indexErr) {
       console.error("Index write failed (data safe in vault):", indexErr);
     }

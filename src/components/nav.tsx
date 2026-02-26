@@ -1,17 +1,26 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { label: "today", href: "/" },
   { label: "inbox", href: "/inbox" },
-  { label: "pages", href: "/pages" },
+  // { label: "lists", href: "/lists" },
   { label: "objects", href: "/objects" },
 ];
 
 export function Nav() {
   const pathname = usePathname();
+  const [inboxCount, setInboxCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/objects?status=INBOX&limit=1")
+      .then((res) => res.json())
+      .then((data) => setInboxCount(data.total ?? 0))
+      .catch(() => {});
+  }, [pathname]);
 
   return (
     <div
@@ -30,7 +39,7 @@ export function Nav() {
               key={item.href}
               href={item.href}
               className={`
-                text-sm transition-all duration-200 ease-out
+                text-sm transition-all duration-200 ease-out flex items-center gap-1.5
                 ${isActive
                   ? "text-gray-900 underline underline-offset-2"
                   : "text-gray-400 hover:text-gray-900"
@@ -38,24 +47,15 @@ export function Nav() {
               `}
             >
               {item.label}
+              {item.href === "/inbox" && inboxCount !== null && inboxCount > 0 && (
+                <span className="text-[10px] text-gray-400 no-underline">
+                  {inboxCount}
+                </span>
+              )}
             </Link>
           );
         })}
 
-        <div className="h-2" />
-
-        <Link
-          href="/settings"
-          className={`
-            text-sm transition-all duration-200 ease-out
-            ${pathname.startsWith("/settings")
-              ? "text-gray-900 underline underline-offset-2"
-              : "text-gray-400 hover:text-gray-900"
-            }
-          `}
-        >
-          settings
-        </Link>
       </nav>
     </div>
   );

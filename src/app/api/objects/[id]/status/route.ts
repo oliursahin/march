@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { EmailStatus } from "@/generated/prisma/enums";
+import { ObjectStatus } from "@/generated/prisma/enums";
 import { writeObjectFile, readObjectFile } from "@/lib/vault";
 
-const VALID_STATUSES = new Set(Object.values(EmailStatus));
+const VALID_STATUSES = new Set(Object.values(ObjectStatus));
 
 export async function PATCH(
   request: NextRequest,
@@ -28,7 +28,7 @@ export async function PATCH(
   const body = await request.json();
   const newStatus = body.status?.toUpperCase();
 
-  if (!newStatus || !VALID_STATUSES.has(newStatus as EmailStatus)) {
+  if (!newStatus || !VALID_STATUSES.has(newStatus as ObjectStatus)) {
     return NextResponse.json(
       { error: "Invalid status. Must be INBOX or PLANNED" },
       { status: 400 }
@@ -56,10 +56,10 @@ export async function PATCH(
 
     // 2. Update SQLite index (best-effort)
     try {
-      await prisma.emailObject.update({
+      await prisma.obj.update({
         where: { id },
         data: {
-          status: newStatus as EmailStatus,
+          status: newStatus as ObjectStatus,
           statusChangedAt: new Date(),
           ...(newStatus === "INBOX" && { dueDate: null }),
         },

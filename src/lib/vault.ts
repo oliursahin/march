@@ -201,7 +201,7 @@ export async function rebuildIndex(vaultDir: string, userId: string): Promise<{ 
 
   for (const obj of objects) {
     try {
-      await prisma.emailObject.upsert({
+      await prisma.obj.upsert({
         where: { id: obj.id },
         create: {
           id: obj.id,
@@ -214,7 +214,7 @@ export async function rebuildIndex(vaultDir: string, userId: string): Promise<{ 
           receivedAt: new Date(obj.receivedAt),
           gmailUrl: obj.gmailUrl,
           dueDate: obj.dueDate ? new Date(obj.dueDate) : null,
-          type: obj.type as "NOTE" | "TODO" | "PAGE" | "BOOKMARK" | "URL",
+          type: obj.type as "NOTE" | "TODO" | "LIST" | "BOOKMARK" | "URL" | "JOURNAL",
           metadata: obj.metadata,
           status: obj.status as "INBOX" | "PLANNED",
           statusChangedAt: new Date(obj.statusChangedAt),
@@ -227,7 +227,7 @@ export async function rebuildIndex(vaultDir: string, userId: string): Promise<{ 
           receivedAt: new Date(obj.receivedAt),
           gmailUrl: obj.gmailUrl,
           dueDate: obj.dueDate ? new Date(obj.dueDate) : null,
-          type: obj.type as "NOTE" | "TODO" | "PAGE" | "BOOKMARK" | "URL",
+          type: obj.type as "NOTE" | "TODO" | "LIST" | "BOOKMARK" | "URL" | "JOURNAL",
           metadata: obj.metadata,
           status: obj.status as "INBOX" | "PLANNED",
           statusChangedAt: new Date(obj.statusChangedAt),

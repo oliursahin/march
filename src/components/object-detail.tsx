@@ -1,7 +1,7 @@
 import { formatDate } from "@/lib/utils";
-import type { EmailObject } from "@/generated/prisma/client";
+import type { Obj } from "@/generated/prisma/client";
 
-export function ObjectDetail({ object }: { object: EmailObject }) {
+export function ObjectDetail({ object }: { object: Obj }) {
   return (
     <div>
       <h1 className="text-lg font-medium text-gray-900 mb-3">{object.subject}</h1>
@@ -19,14 +19,14 @@ export function ObjectDetail({ object }: { object: EmailObject }) {
           href={object.gmailUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-gray-400 hover:text-gray-900 transition-colors"
+          className="hover:text-gray-900 transition-colors"
         >
           View in Gmail
         </a>
       </div>
 
       <div className="border-t border-gray-100 pt-6">
-        <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+        <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
           {object.bodyText || "No content available."}
         </div>
       </div>

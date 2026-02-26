@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser } from "@/lib/session";
+import { ObjectType } from "@/generated/prisma/enums";
 import { redirect, notFound } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { ObjectEditor } from "@/components/object-editor";
-import { StatusActions } from "@/components/status-actions";
+
 import { DateInput } from "@/components/date-input";
+import { AddToListPicker } from "@/components/add-to-list-picker";
 import { CommandBar } from "@/components/command-bar";
 import Link from "next/link";
 
@@ -18,9 +20,21 @@ export default async function ObjectPage({
 
   const { id } = await params;
 
-  const object = await prisma.emailObject.findUnique({
-    where: { id, userId: auth.userId },
-  });
+  const [object, allLists] = await Promise.all([
+    prisma.obj.findUnique({
+      where: { id, userId: auth.userId },
+      include: {
+        memberOfLists: {
+          select: { id: true, listId: true },
+        },
+      },
+    }),
+    prisma.obj.findMany({
+      where: { userId: auth.userId, type: ObjectType.LIST },
+      select: { id: true, subject: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+  ]);
 
   if (!object) notFound();
 
@@ -31,14 +45,20 @@ export default async function ObjectPage({
         <div className="max-w-2xl w-full mx-auto px-4 py-10">
           <div className="flex items-center justify-between mb-8">
             <Link
-              href={object.type === "PAGE" ? "/pages" : "/objects"}
+              href={object.type === "LIST" ? "/lists" : "/objects"}
               className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
             >
               &larr; Back
             </Link>
             <div className="flex items-center gap-4">
+              {object.type !== "LIST" && (
+                <AddToListPicker
+                  objectId={object.id}
+                  allLists={allLists}
+                  memberships={object.memberOfLists}
+                />
+              )}
               <DateInput objectId={object.id} initialDate={object.dueDate} />
-              <StatusActions objectId={object.id} currentStatus={object.status} />
             </div>
           </div>
           <ObjectEditor

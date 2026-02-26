@@ -314,7 +314,7 @@ export function NoteEditor() {
           <button
             onClick={handleSave}
             disabled={state === "saving"}
-            className="text-xs text-gray-400 hover:text-gray-900 transition-colors disabled:cursor-not-allowed"
+            className="text-xs text-gray-900 hover:text-gray-900 transition-colors disabled:cursor-not-allowed"
           >
             {state === "saving"
               ? "sending..."
@@ -322,7 +322,7 @@ export function NoteEditor() {
                 ? "sent"
                 : "send to self"}
           </button>
-          <span className="text-xs text-gray-300 ml-3">⌘↵</span>
+          <span className="text-xs text-gray-400 ml-3">⌘↵</span>
         </div>
       )}
     </div>

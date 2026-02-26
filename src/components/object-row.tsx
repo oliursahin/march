@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { timeAgo, truncate } from "@/lib/utils";
 import { formatNice } from "@/lib/parse-date";
-import type { EmailObjectListItem } from "@/types";
+import type { ObjListItem } from "@/types";
 
 const TYPE_LABELS: Record<string, string> = {
   NOTE: "note",
   TODO: "todo",
-  PAGE: "page",
+  LIST: "list",
   BOOKMARK: "bookmark",
   URL: "url",
+  JOURNAL: "journal",
 };
 
-export function ObjectRow({ object }: { object: EmailObjectListItem }) {
+export function ObjectRow({ object }: { object: ObjListItem }) {
   return (
     <Link
       href={`/object/${object.id}`}

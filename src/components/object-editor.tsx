@@ -118,14 +118,14 @@ export function ObjectEditor({
           if (timerRef.current) clearTimeout(timerRef.current);
           timerRef.current = setTimeout(() => handleSave(), 2000);
         }}
-        className="w-full text-lg font-medium text-gray-900 bg-transparent outline-none mb-6 placeholder:text-gray-300"
+        className="w-full text-lg font-medium text-gray-900 bg-transparent outline-none mb-6 placeholder:text-gray-700"
         placeholder="Title"
       />
 
       <EditorContent editor={editor} />
 
       <div className="fixed bottom-8 right-8">
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-900">
           {saving ? "saving..." : saved ? "saved" : ""}
         </span>
       </div>

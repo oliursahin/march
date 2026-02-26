@@ -14,4 +14,4 @@ export const VAULT_CONFIGURED_COOKIE = "__vault_configured";
 
 export const PUBLIC_PATHS = ["/signin", "/auth/success", "/setup"];
 
-export const IGNORED_PREFIXES = ["/api/auth", "/_next", "/favicon.ico"];
+export const IGNORED_PREFIXES = ["/api/auth", "/api/ingest", "/_next", "/favicon.ico"];

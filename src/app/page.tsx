@@ -1,9 +1,12 @@
 import { getAuthenticatedUser } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { ObjectType } from "@/generated/prisma/enums";
 import { Nav } from "@/components/nav";
 import { NoteEditor } from "@/components/note-editor";
+import { RefreshButton } from "@/components/refresh-button";
 import { CommandBar } from "@/components/command-bar";
-import { TodayAgenda } from "@/components/today-agenda";
+import { TodayObjects } from "@/components/today-objects";
 
 export default async function TodayPage() {
   const auth = await getAuthenticatedUser();
@@ -15,19 +18,35 @@ export default async function TodayPage() {
     day: "numeric",
   });
 
+  // Fetch today's journal entries
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const todayObjects = await prisma.obj.findMany({
+    where: {
+      userId: auth.userId,
+      type: ObjectType.JOURNAL,
+      createdAt: { gte: startOfDay },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      subject: true,
+      createdAt: true,
+    },
+  });
+
   return (
     <div className="min-h-screen">
       <Nav />
       <main className="flex-1 flex items-start justify-center p-6">
-        <div className="max-w-5xl w-full mx-auto flex gap-16 px-4 py-10">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-500 mb-8">{today}</p>
-            <NoteEditor />
+        <div className="max-w-2xl w-full mx-auto px-4 py-10">
+          <div className="flex items-center justify-between mb-8">
+            <p className="text-xs text-gray-400">{today}</p>
+            <RefreshButton />
           </div>
-          <div className="w-48 shrink-0 pt-6">
-            <p className="text-xs text-gray-400 mb-4">agenda</p>
-            <TodayAgenda />
-          </div>
+          <NoteEditor />
+          <TodayObjects objects={todayObjects} />
         </div>
       </main>
       <CommandBar />

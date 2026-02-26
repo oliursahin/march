@@ -3,14 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { cn } from "@/lib/utils";
-import type { EmailStatus } from "@/types";
+import type { ObjectStatus } from "@/types";
 
 export function StatusActions({
   objectId,
   currentStatus,
 }: {
   objectId: string;
-  currentStatus: EmailStatus;
+  currentStatus: ObjectStatus;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

@@ -14,10 +14,12 @@ model User {
   avatarUrl   String?
   vaultName   String?
   vaultPath   String?
+  apiKey      String?       @unique
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  objects     EmailObject[]
-  gmailTokens GmailTokens?
+  objects       Obj[]
+  gmailTokens   GmailTokens?
+  twitterTokens TwitterTokens?
 }
 
 model GmailTokens {
@@ -35,9 +37,24 @@ model GmailTokens {
   @@index([userId])
 }
 
-model EmailObject {
-  id              String      @id @default(cuid())
-  gmailId         String      @unique
+model TwitterTokens {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime?
+  xUserId      String
+  xUsername     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Obj {
+  id              String       @id @default(cuid())
+  gmailId         String       @unique
   userId          String
   subject         String
   senderName      String
@@ -46,28 +63,48 @@ model EmailObject {
   receivedAt      DateTime
   gmailUrl        String
   dueDate         DateTime?
-  type            ObjectType  @default(NOTE)
+  type            ObjectType   @default(NOTE)
   metadata        String?
-  status          EmailStatus @default(INBOX)
-  statusChangedAt DateTime    @default(now())
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          ObjectStatus @default(INBOX)
+  statusChangedAt DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listItems       ListItem[]   @relation("ListItems")
+  memberOfLists   ListItem[]   @relation("ObjectLists")
 
+  @@map("EmailObject")
   @@index([userId, status])
   @@index([userId, type])
   @@index([receivedAt])
 }
 
-enum EmailStatus {
+model ListItem {
+  id        String      @id @default(cuid())
+  listId    String
+  objectId  String
+  position  Int         @default(0)
+  createdAt DateTime    @default(now())
+  list      Obj @relation("ListItems", fields: [listId], references: [id], onDelete: Cascade)
+  object    Obj @relation("ObjectLists", fields: [objectId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, objectId])
+  @@index([listId, position])
+  @@index([objectId])
+}
+
+enum ObjectStatus {
   INBOX
   PLANNED
+
+  @@map("EmailStatus")
 }
 
 enum ObjectType {
   NOTE
   TODO
-  PAGE
+  LIST
   BOOKMARK
   URL
+  JOURNAL
 }

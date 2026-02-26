@@ -14,7 +14,7 @@ export async function GET(
 
   const { id } = await params;
 
-  const object = await prisma.emailObject.findUnique({
+  const object = await prisma.obj.findUnique({
     where: { id, userId: auth.userId },
   });
 
@@ -68,7 +68,7 @@ export async function PATCH(
 
     // 2. Update SQLite index (best-effort)
     try {
-      await prisma.emailObject.update({
+      await prisma.obj.update({
         where: { id },
         data: {
           ...(bodyText !== undefined && { bodyText }),

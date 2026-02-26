@@ -28,7 +28,7 @@ export function TodayAgenda() {
                 isPast ? "opacity-40" : ""
               }`}
             >
-              <span className="text-xs text-gray-500 w-16 shrink-0 tabular-nums">
+              <span className="text-xs text-gray-400 w-16 shrink-0 tabular-nums">
                 {event.time}
               </span>
               <span className="text-sm text-gray-900 truncate">
