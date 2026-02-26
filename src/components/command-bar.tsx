@@ -29,6 +29,11 @@ const PAGES = [
   { label: "Settings", href: "/settings" },
 ];
 
+interface ListAction {
+  label: string;
+  key: string;
+}
+
 export function CommandBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,6 +53,24 @@ export function CommandBar() {
   const trimmed = query.trim();
   const hasQuery = trimmed.length > 0;
 
+  // List-specific actions when a list is active
+  const listActions = useMemo<ListAction[]>(() => {
+    if (!activeList) return [];
+    return [
+      { label: "Add objects...", key: "add" },
+      { label: "Plan", key: "plan" },
+      { label: "Move to inbox", key: "inbox" },
+    ];
+  }, [activeList]);
+
+  // Filter list actions by query
+  const matchingListActions = useMemo(() => {
+    if (!activeList) return [];
+    if (!hasQuery) return listActions;
+    const lower = trimmed.toLowerCase();
+    return listActions.filter((a) => a.label.toLowerCase().includes(lower));
+  }, [activeList, listActions, hasQuery, trimmed]);
+
   // Filter pages by query (show all when empty)
   const matchingPages = useMemo(() => {
     if (!hasQuery) return PAGES;
@@ -63,19 +86,20 @@ export function CommandBar() {
     );
   }, [results, activeList]);
 
-  // Row indices: pages, then add-to-list OR objects, then create
+  // Row indices: list actions, then pages, then results, then create
   const showAddToList = activeList !== null && hasQuery;
   const displayedResults = showAddToList ? addableResults : results;
 
-  const totalRows =
-    matchingPages.length + displayedResults.length + (hasQuery ? 1 : 0);
-  const resultsStartIndex = matchingPages.length;
-  const createIndex = matchingPages.length + displayedResults.length;
+  const actionsCount = matchingListActions.length;
+  const pagesStartIndex = actionsCount;
+  const resultsStartIndex = actionsCount + matchingPages.length;
+  const createIndex = actionsCount + matchingPages.length + displayedResults.length;
+  const totalRows = createIndex + (hasQuery ? 1 : 0);
 
-  // Reset selection when results or pages change
+  // Reset selection when content changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [results, matchingPages.length]);
+  }, [results, matchingPages.length, matchingListActions.length]);
 
   // Cmd+K to toggle
   useEffect(() => {
@@ -205,13 +229,58 @@ export function CommandBar() {
     [activeList, submitting, close, router]
   );
 
+  const handleListAction = useCallback(
+    async (key: string) => {
+      if (!activeList || submitting) return;
+
+      if (key === "add") {
+        // Focus input and set placeholder hint
+        setQuery("");
+        inputRef.current?.focus();
+        return;
+      }
+
+      const statusMap: Record<string, string> = {
+        plan: "PLANNED",
+        inbox: "INBOX",
+      };
+
+      const status = statusMap[key];
+      if (!status) return;
+
+      setSubmitting(true);
+      try {
+        const res = await fetch(`/api/objects/${activeList.id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+
+        if (res.ok) {
+          close();
+          router.refresh();
+        }
+      } catch (e) {
+        console.error("Status change failed:", e);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [activeList, submitting, close, router]
+  );
+
   const handleSelect = useCallback(
     (index: number) => {
-      if (index < matchingPages.length) {
-        const page = matchingPages[index];
+      if (index < actionsCount) {
+        // List action
+        handleListAction(matchingListActions[index].key);
+      } else if (index < resultsStartIndex) {
+        // Navigate to page
+        const page = matchingPages[index - pagesStartIndex];
         close();
         router.push(page.href);
       } else if (index < createIndex) {
+        // Object result
         const obj = displayedResults[index - resultsStartIndex];
         if (showAddToList) {
           handleAddToList(obj.id);
@@ -224,12 +293,16 @@ export function CommandBar() {
       }
     },
     [
+      actionsCount,
+      matchingListActions,
       matchingPages,
+      pagesStartIndex,
       displayedResults,
       resultsStartIndex,
       createIndex,
       hasQuery,
       showAddToList,
+      handleListAction,
       handleAddToList,
       handleCreate,
       close,
@@ -299,29 +372,53 @@ export function CommandBar() {
         </div>
 
         {/* Content */}
-        {(matchingPages.length > 0 || displayedResults.length > 0 || hasQuery) && (
+        {(matchingListActions.length > 0 || matchingPages.length > 0 || displayedResults.length > 0 || hasQuery) && (
           <div className="border-t border-gray-100 max-h-[50vh] overflow-y-auto">
+            {/* List actions */}
+            {matchingListActions.length > 0 && (
+              <div>
+                <p className="px-4 pt-2.5 pb-0.5 text-[11px] text-gray-400">
+                  {activeList?.name}
+                </p>
+                {matchingListActions.map((action, i) => (
+                  <button
+                    key={action.key}
+                    onClick={() => handleSelect(i)}
+                    onMouseEnter={() => setSelectedIndex(i)}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+                      selectedIndex === i ? "bg-gray-100" : ""
+                    }`}
+                  >
+                    <span className="text-xs text-gray-900">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Go to pages */}
             {matchingPages.length > 0 && (
               <div>
                 <p className="px-4 pt-2.5 pb-0.5 text-[11px] text-gray-400">
                   Go to
                 </p>
-                {matchingPages.map((page, i) => (
-                  <button
-                    key={page.href}
-                    onClick={() => handleSelect(i)}
-                    onMouseEnter={() => setSelectedIndex(i)}
-                    className={`w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors ${
-                      selectedIndex === i ? "bg-gray-100" : ""
-                    }`}
-                  >
-                    <span className="text-xs text-gray-900">{page.label}</span>
-                    <span className="text-[11px] text-gray-400">
-                      {page.href}
-                    </span>
-                  </button>
-                ))}
+                {matchingPages.map((page, i) => {
+                  const rowIndex = pagesStartIndex + i;
+                  return (
+                    <button
+                      key={page.href}
+                      onClick={() => handleSelect(rowIndex)}
+                      onMouseEnter={() => setSelectedIndex(rowIndex)}
+                      className={`w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors ${
+                        selectedIndex === rowIndex ? "bg-gray-100" : ""
+                      }`}
+                    >
+                      <span className="text-xs text-gray-900">{page.label}</span>
+                      <span className="text-[11px] text-gray-400">
+                        {page.href}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -362,7 +459,7 @@ export function CommandBar() {
             {/* Create action */}
             {hasQuery && (
               <>
-                {(matchingPages.length > 0 || displayedResults.length > 0) && (
+                {(matchingListActions.length > 0 || matchingPages.length > 0 || displayedResults.length > 0) && (
                   <div className="border-t border-gray-100" />
                 )}
                 <button
