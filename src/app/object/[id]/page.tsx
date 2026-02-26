@@ -4,7 +4,7 @@ import { ObjectType } from "@/generated/prisma/enums";
 import { redirect, notFound } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { ObjectEditor } from "@/components/object-editor";
-import { StatusActions } from "@/components/status-actions";
+
 import { DateInput } from "@/components/date-input";
 import { AddToListPicker } from "@/components/add-to-list-picker";
 import { CommandBar } from "@/components/command-bar";
@@ -59,7 +59,6 @@ export default async function ObjectPage({
                 />
               )}
               <DateInput objectId={object.id} initialDate={object.dueDate} />
-              <StatusActions objectId={object.id} currentStatus={object.status} />
             </div>
           </div>
           <ObjectEditor

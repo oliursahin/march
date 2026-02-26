@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ObjectEditor } from "./object-editor";
-import { DateInput } from "./date-input";
+
 import { useActiveList } from "@/lib/list-context";
 import { timeAgo, truncate } from "@/lib/utils";
 import type { ObjectStatus, ObjectType } from "@/types";
@@ -68,7 +68,7 @@ export function ListsView({ lists }: { lists: ListViewItem[] }) {
   };
 
   return (
-    <>
+    <div className="flex gap-10">
       {/* Sidebar */}
       <div className="w-36 shrink-0">
         <p className="text-xs text-gray-400 mb-4">lists</p>
@@ -100,9 +100,6 @@ export function ListsView({ lists }: { lists: ListViewItem[] }) {
       <div className="flex-1 min-w-0">
         {activeList ? (
           <>
-            <div className="flex items-center justify-end gap-4 mb-8">
-              <DateInput objectId={activeList.id} initialDate={activeList.dueDate} />
-            </div>
             <ObjectEditor
               key={activeList.id}
               objectId={activeList.id}
@@ -141,6 +138,6 @@ export function ListsView({ lists }: { lists: ListViewItem[] }) {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
