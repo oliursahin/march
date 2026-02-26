@@ -1,9 +1,12 @@
 import { getAuthenticatedUser } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { ObjectType } from "@/generated/prisma/enums";
 import { Nav } from "@/components/nav";
 import { NoteEditor } from "@/components/note-editor";
 import { RefreshButton } from "@/components/refresh-button";
 import { CommandBar } from "@/components/command-bar";
+import { TodayObjects } from "@/components/today-objects";
 
 export default async function TodayPage() {
   const auth = await getAuthenticatedUser();
@@ -13,6 +16,24 @@ export default async function TodayPage() {
     weekday: "long",
     month: "long",
     day: "numeric",
+  });
+
+  // Fetch today's journal entries
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const todayObjects = await prisma.obj.findMany({
+    where: {
+      userId: auth.userId,
+      type: ObjectType.JOURNAL,
+      createdAt: { gte: startOfDay },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      subject: true,
+      createdAt: true,
+    },
   });
 
   return (
@@ -25,6 +46,7 @@ export default async function TodayPage() {
             <RefreshButton />
           </div>
           <NoteEditor />
+          <TodayObjects objects={todayObjects} />
         </div>
       </main>
       <CommandBar />
